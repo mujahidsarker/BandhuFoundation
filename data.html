@@ -362,7 +362,7 @@
   // ══════════════════════════════════════════════════
   //  ⚙️  CONFIGURATION — same URL as index.html
   // ══════════════════════════════════════════════════
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGh1fGzHVkzeP-XRCVY8xtqLtR6y1al9EovBYjG9cWrX96Q72v3Bzaz_bk8oLxWe8G/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzynYyFPDwGxmS2KccgqeCYoQh1yYaQGhRvTI4vAF2ySozyLX526CXMXFfK7AFkMmV4/exec";
   // ══════════════════════════════════════════════════
 
   let allRows = [];
@@ -374,16 +374,35 @@
     loadData();
   });
 
+  // ── JSONP fetch — works cross-origin with Google Apps Script ──
+  function jsonpFetch(url) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Date.now();
+      const script = document.createElement('script');
+      const timeout = setTimeout(() => {
+        delete window[cbName];
+        script.remove();
+        reject(new Error('Timeout'));
+      }, 10000);
+      window[cbName] = (data) => {
+        clearTimeout(timeout);
+        delete window[cbName];
+        script.remove();
+        resolve(data);
+      };
+      script.src = url + '&callback=' + cbName;
+      script.onerror = () => { clearTimeout(timeout); reject(new Error('Script error')); };
+      document.head.appendChild(script);
+    });
+  }
+
   async function loadData() {
-    const btn  = document.getElementById('refreshBtn');
-    const icon = document.getElementById('refreshIcon');
+    const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
     btn.disabled = true;
 
     try {
-      const res  = await fetch(SCRIPT_URL + '?action=getAll');
-      const data = await res.json();
-
+      const data = await jsonpFetch(SCRIPT_URL + '?action=getAll');
       if (data.status === 'success') {
         allRows = data.rows;
         renderTable(allRows);
@@ -392,7 +411,8 @@
         showToast('❌ ' + data.message, 'error');
       }
     } catch (err) {
-      showToast('❌ Could not load data.', 'error');
+      showToast('❌ Could not load data. Check your Script URL.', 'error');
+      console.error(err);
     } finally {
       btn.classList.remove('spinning');
       btn.disabled = false;
@@ -467,8 +487,7 @@
 
     try {
       const params = new URLSearchParams({ action:'update', rowIndex, month, name, receiptNo, foundationFee, others });
-      const res    = await fetch(SCRIPT_URL + '?' + params.toString());
-      const data   = await res.json();
+      const data   = await jsonpFetch(SCRIPT_URL + '?' + params.toString());
       if (data.status === 'success') {
         showToast('✅ Entry updated!', 'success');
         closeEdit();
@@ -494,8 +513,7 @@
     const rowIndex = document.getElementById('deleteRow').value;
     try {
       const params = new URLSearchParams({ action:'delete', rowIndex });
-      const res    = await fetch(SCRIPT_URL + '?' + params.toString());
-      const data   = await res.json();
+      const data   = await jsonpFetch(SCRIPT_URL + '?' + params.toString());
       if (data.status === 'success') {
         showToast('🗑️ Entry deleted!', 'success');
         closeDelete();
