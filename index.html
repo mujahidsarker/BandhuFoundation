@@ -352,7 +352,7 @@
     // ══════════════════════════════════════════════════
     //  ⚙️  CONFIGURATION — paste your Web App URL here
     // ══════════════════════════════════════════════════
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbgivOlZqvhxo5JnWR5dOoIyOGM_kCai-psaOQq4e_R4rNAFC-8vAHUXskTXbEbKV6/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGh1fGzHVkzeP-XRCVY8xtqLtR6y1al9EovBYjG9cWrX96Q72v3Bzaz_bk8oLxWe8G/exec";
     // ══════════════════════════════════════════════════
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -370,7 +370,7 @@
       const others        = document.getElementById('others').value.trim() || '0';
 
       if (!month || !name || !receiptNo || !foundationFee) {
-        showToast('⚠️ Please fill in all required fields.', 'error');
+        showToast('\u26a0\ufe0f Please fill in all required fields.', 'error');
         return;
       }
 
@@ -378,18 +378,31 @@
 
       try {
         const params = new URLSearchParams({ month, name, receiptNo, foundationFee, others });
-        await fetch(SCRIPT_URL + '?' + params.toString(), {
-          method: 'GET',
-          mode: 'no-cors'
-        });
-        showToast('✅ Entry saved to Google Sheets!', 'success');
+        await sendViaIframe(SCRIPT_URL + '?' + params.toString());
+        showToast('\u2705 Entry saved to Google Sheets!', 'success');
         clearForm();
       } catch (err) {
-        showToast('❌ Failed to save. Check your connection.', 'error');
+        showToast('\u274c Failed to save. Check your connection.', 'error');
         console.error(err);
       } finally {
         setLoading(false);
       }
+    }
+
+    // Hidden iframe approach — avoids CORS issues with Google Apps Script
+    function sendViaIframe(url) {
+      return new Promise((resolve) => {
+        let iframe = document.getElementById('hiddenFrame');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.id = 'hiddenFrame';
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+        }
+        iframe.onload = () => resolve();
+        iframe.src = url;
+        setTimeout(resolve, 4000);
+      });
     }
 
     function clearForm() {
