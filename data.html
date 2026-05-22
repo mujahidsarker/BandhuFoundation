@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #0d0f14;
+      --surface: #151820;
+      --surface2:#1c2030;
+      --border:  #252a36;
+      --accent:  #4f8ef7;
+      --accent2: #a78bfa;
+      --success: #34d399;
+      --error:   #f87171;
+      --warn:    #fbbf24;
+      --text:    #e8eaf0;
+      --muted:   #6b7280;
+      --label:   #9ca3af;
+      --radius:  14px;
+      --font-head:'Syne',sans-serif;
+      --font-body:'DM Sans',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:var(--font-body);
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      padding:32px 20px;
+    }
+    body::before,body::after{
+      content:'';position:fixed;border-radius:50%;
+      filter:blur(120px);opacity:0.12;pointer-events:none;z-index:0;
+    }
+    body::before{width:500px;height:500px;background:var(--accent);top:-150px;left:-150px;}
+    body::after {width:400px;height:400px;background:var(--accent2);bottom:-100px;right:-100px;}
+
+    .page{position:relative;z-index:1;max-width:1000px;margin:0 auto;}
+
+    /* Header */
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:gap;}
+    .page-header h1{font-family:var(--font-head);font-size:26px;font-weight:800;}
+    .back-btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:9px 18px;border-radius:50px;
+      background:rgba(255,255,255,0.06);border:1px solid var(--border);
+      color:var(--muted);font-size:13px;font-weight:600;
+      text-decoration:none;font-family:var(--font-head);
+      transition:background 0.2s,color 0.2s;
+    }
+    .back-btn:hover{background:rgba(255,255,255,0.1);color:var(--text);}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .stat-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:18px 20px;
+    }
+    .stat-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-family:var(--font-head);}
+    .stat-value{font-size:24px;font-weight:800;font-family:var(--font-head);}
+    .stat-value.blue{color:var(--accent);}
+    .stat-value.purple{color:var(--accent2);}
+    .stat-value.green{color:var(--success);}
+
+    /* Table card */
+    .table-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:20px;overflow:hidden;
+    }
+    .table-toolbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;
+    }
+    .table-title{font-family:var(--font-head);font-size:15px;font-weight:700;}
+    .refresh-btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:8px 16px;border-radius:50px;border:none;cursor:pointer;
+      background:rgba(79,142,247,0.12);color:var(--accent);
+      font-size:13px;font-weight:600;font-family:var(--font-head);
+      transition:background 0.2s;
+    }
+    .refresh-btn:hover{background:rgba(79,142,247,0.22);}
+    .refresh-btn.spinning svg{animation:spin 0.7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;min-width:650px;}
+    thead tr{background:rgba(79,142,247,0.08);}
+    th{
+      padding:13px 16px;text-align:left;
+      font-family:var(--font-head);font-size:11px;font-weight:700;
+      letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+      border-bottom:1px solid var(--border);white-space:nowrap;
+    }
+    td{
+      padding:13px 16px;font-size:14px;
+      border-bottom:1px solid rgba(37,42,54,0.6);
+      vertical-align:middle;
+    }
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover{background:rgba(255,255,255,0.02);}
+    tbody tr.highlight{animation:rowPop 0.4s ease;}
+    @keyframes rowPop{0%{background:rgba(79,142,247,0.15);}100%{background:transparent;}}
+
+    .amount-cell{font-weight:600;color:var(--success);}
+    .ts-cell{font-size:12px;color:var(--muted);}
+    .row-num{color:var(--muted);font-size:12px;}
+
+    /* Action buttons */
+    .actions{display:flex;gap:8px;align-items:center;}
+    .action-btn{
+      padding:6px 12px;border:none;border-radius:8px;
+      font-size:12px;font-weight:600;cursor:pointer;
+      font-family:var(--font-head);transition:opacity 0.2s,transform 0.15s;
+      display:inline-flex;align-items:center;gap:4px;
+    }
+    .action-btn:hover{opacity:0.8;}
+    .action-btn:active{transform:scale(0.95);}
+    .btn-edit{background:rgba(79,142,247,0.15);color:var(--accent);}
+    .btn-delete{background:rgba(248,113,113,0.15);color:var(--error);}
+
+    /* Empty / loading */
+    .empty-state{
+      text-align:center;padding:60px 20px;
+    }
+    .empty-icon{font-size:48px;margin-bottom:16px;}
+    .empty-title{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px;}
+    .empty-sub{color:var(--muted);font-size:14px;}
+
+    /* Toast */
+    .toast{
+      position:fixed;top:24px;left:50%;
+      transform:translateX(-50%) translateY(-80px);
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:50px;padding:12px 22px;
+      font-size:13px;font-weight:500;
+      display:flex;align-items:center;gap:10px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+      transition:transform 0.4s cubic-bezier(0.22,1,0.36,1),opacity 0.3s;
+      z-index:999;opacity:0;white-space:nowrap;
+    }
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+    .toast.success{border-color:rgba(52,211,153,0.35);color:var(--success);}
+    .toast.error  {border-color:rgba(248,113,113,0.35);color:var(--error);}
+
+    /* Modal overlay */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,0.7);
+      backdrop-filter:blur(4px);z-index:100;
+      display:flex;align-items:center;justify-content:center;
+      padding:20px;opacity:0;pointer-events:none;
+      transition:opacity 0.25s;
+    }
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+
+    .modal{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:20px;padding:36px 32px;width:100%;max-width:460px;
+      box-shadow:0 30px 80px rgba(0,0,0,0.6);
+      transform:translateY(20px);transition:transform 0.25s;
+    }
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal h2{font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:24px;}
+
+    .modal .fields{display:flex;flex-direction:column;gap:14px;}
+    .modal .field{display:flex;flex-direction:column;gap:6px;}
+    .modal .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .modal label{
+      font-size:11px;font-weight:700;letter-spacing:0.8px;
+      text-transform:uppercase;color:var(--label);font-family:var(--font-head);
+    }
+    .modal input,.modal select{
+      width:100%;padding:11px 14px;
+      background:rgba(255,255,255,0.04);
+      border:1.5px solid var(--border);border-radius:10px;
+      color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;
+      -webkit-appearance:none;appearance:none;
+      transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    .modal select option{background:#1e2230;color:#e8eaf0;}
+    .modal input:focus,.modal select:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(79,142,247,0.12);
+    }
+    .modal-actions{display:flex;gap:10px;margin-top:24px;}
+    .modal .btn{
+      flex:1;padding:12px;border:none;border-radius:10px;
+      font-family:var(--font-head);font-size:14px;font-weight:700;
+      cursor:pointer;transition:opacity 0.2s;
+    }
+    .modal .btn-save{background:linear-gradient(135deg,var(--accent),#7b6ef6);color:#fff;}
+    .modal .btn-cancel{background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border);}
+    .modal .btn:hover{opacity:0.85;}
+
+    /* Delete confirm modal */
+    .del-modal{max-width:380px;text-align:center;}
+    .del-modal .del-icon{font-size:44px;margin-bottom:12px;}
+    .del-modal p{color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6;}
+    .del-modal .btn-danger{background:linear-gradient(135deg,#f87171,#ef4444);color:#fff;}
+
+    #configNotice{
+      background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);
+      border-radius:10px;padding:12px 16px;font-size:13px;color:var(--error);
+      margin-bottom:20px;display:none;line-height:1.5;
+    }
+
+    @media(max-width:600px){
+      .stats{grid-template-columns:1fr 1fr;}
+      .page-header{flex-direction:column;align-items:flex-start;gap:12px;}
+      .modal{padding:28px 20px;}
+      .modal .field-row{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal">
+    <h2>✏️ Edit Entry</h2>
+    <input type="hidden" id="editRow"/>
+    <div class="fields">
+      <div class="field">
+        <label>Month</label>
+        <select id="editMonth">
+          <option value="January">January</option><option value="February">February</option>
+          <option value="March">March</option><option value="April">April</option>
+          <option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option>
+          <option value="September">September</option><option value="October">October</option>
+          <option value="November">November</option><option value="December">December</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Name</label>
+        <select id="editName">
+          <option value="Mujahid Sarker">Mujahid Sarker</option>
+          <option value="Nahid Hasan Pranto">Nahid Hasan Pranto</option>
+          <option value="Shariful Islam">Shariful Islam</option>
+          <option value="Najmul Gazi">Najmul Gazi</option>
+          <option value="Shafiqul Islam">Shafiqul Islam</option>
+          <option value="Sumon Bappy">Sumon Bappy</option>
+          <option value="Shuhanur Rahman">Shuhanur Rahman</option>
+          <option value="Shohel Rana">Shohel Rana</option>
+          <option value="Tanjim Ahmed Rasel">Tanjim Ahmed Rasel</option>
+          <option value="Masudur Rahman">Masudur Rahman</option>
+          <option value="Imran Rajib">Imran Rajib</option>
+          <option value="Mamun Fakir">Mamun Fakir</option>
+          <option value="Khairul Islam">Khairul Islam</option>
+          <option value="Al Amin Molla">Al Amin Molla</option>
+          <option value="Sadiya Afrin Dhema">Sadiya Afrin Dhema</option>
+          <option value="Mosa Abedin Fahim">Mosa Abedin Fahim</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Receipt No</label>
+        <input type="text" id="editReceiptNo" placeholder="Receipt number"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Foundation Fee</label>
+          <input type="number" id="editFoundationFee" placeholder="0.00" step="0.01" min="0"/>
+        </div>
+        <div class="field">
+          <label>Others</label>
+          <input type="number" id="editOthers" placeholder="0.00" step="0.01" min="0"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-save" onclick="saveEdit()">💾 Save Changes</button>
+      <button class="btn btn-cancel" onclick="closeEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteOverlay">
+  <div class="modal del-modal">
+    <div class="del-icon">🗑️</div>
+    <h2>Delete Entry?</h2>
+    <p>This action cannot be undone. The entry will be permanently removed from Google Sheets.</p>
+    <input type="hidden" id="deleteRow"/>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
+      <button class="btn btn-cancel" onclick="closeDelete()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div id="configNotice">
+    ⚠️ <strong>Setup required:</strong> Replace <code>https://script.google.com/macros/s/AKfycbwbgivOlZqvhxo5JnWR5dOoIyOGM_kCai-psaOQq4e_R4rNAFC-8vAHUXskTXbEbKV6/exec</code> in this file with your Apps Script Web App URL.
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div style="font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">📊 Records</div>
+      <h1>All Entries</h1>
+    </div>
+    <a href="index.html" class="back-btn">← Back to Form</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Entries</div>
+      <div class="stat-value blue" id="statCount">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Foundation Fee</div>
+      <div class="stat-value purple" id="statFoundation">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Others</div>
+      <div class="stat-value green" id="statOthers">—</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="table-title">📋 Entry Records</div>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+        <svg id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        Refresh
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>Month</th>
+            <th>Name</th>
+            <th>Receipt No</th>
+            <th>Foundation Fee</th>
+            <th>Others</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading data…</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  // ══════════════════════════════════════════════════
+  //  ⚙️  CONFIGURATION — same URL as index.html
+  // ══════════════════════════════════════════════════
+  const SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+  // ══════════════════════════════════════════════════
+
+  let allRows = [];
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+      document.getElementById('configNotice').style.display = 'block';
+    }
+    loadData();
+  });
+
+  async function loadData() {
+    const btn  = document.getElementById('refreshBtn');
+    const icon = document.getElementById('refreshIcon');
+    btn.classList.add('spinning');
+    btn.disabled = true;
+
+    try {
+      const res  = await fetch(SCRIPT_URL + '?action=getAll');
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        allRows = data.rows;
+        renderTable(allRows);
+        renderStats(allRows);
+      } else {
+        showToast('❌ ' + data.message, 'error');
+      }
+    } catch (err) {
+      showToast('❌ Could not load data.', 'error');
+    } finally {
+      btn.classList.remove('spinning');
+      btn.disabled = false;
+    }
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No entries yet</div>
+        <div class="empty-sub">Go back to the form and add your first entry.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr id="row-${r.rowIndex}">
+        <td class="row-num">${i + 1}</td>
+        <td class="ts-cell">${r.timestamp}</td>
+        <td>${r.month}</td>
+        <td><strong>${r.name}</strong></td>
+        <td>${r.receiptNo}</td>
+        <td class="amount-cell">৳ ${parseFloat(r.foundationFee).toLocaleString()}</td>
+        <td class="amount-cell">৳ ${parseFloat(r.others).toLocaleString()}</td>
+        <td>
+          <div class="actions">
+            <button class="action-btn btn-edit" onclick="openEdit(${r.rowIndex})">✏️ Edit</button>
+            <button class="action-btn btn-delete" onclick="openDelete(${r.rowIndex})">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderStats(rows) {
+    const totalFoundation = rows.reduce((s, r) => s + (parseFloat(r.foundationFee) || 0), 0);
+    const totalOthers     = rows.reduce((s, r) => s + (parseFloat(r.others) || 0), 0);
+    document.getElementById('statCount').textContent      = rows.length;
+    document.getElementById('statFoundation').textContent = '৳ ' + totalFoundation.toLocaleString();
+    document.getElementById('statOthers').textContent     = '৳ ' + totalOthers.toLocaleString();
+  }
+
+  // ── Edit ────────────────────────────────────────────────
+  function openEdit(rowIndex) {
+    const r = allRows.find(x => x.rowIndex === rowIndex);
+    if (!r) return;
+    document.getElementById('editRow').value          = rowIndex;
+    document.getElementById('editMonth').value        = r.month;
+    document.getElementById('editName').value         = r.name;
+    document.getElementById('editReceiptNo').value    = r.receiptNo;
+    document.getElementById('editFoundationFee').value= r.foundationFee;
+    document.getElementById('editOthers').value       = r.others;
+    document.getElementById('editOverlay').classList.add('open');
+  }
+  function closeEdit() {
+    document.getElementById('editOverlay').classList.remove('open');
+  }
+
+  async function saveEdit() {
+    const rowIndex     = document.getElementById('editRow').value;
+    const month        = document.getElementById('editMonth').value;
+    const name         = document.getElementById('editName').value;
+    const receiptNo    = document.getElementById('editReceiptNo').value.trim();
+    const foundationFee= document.getElementById('editFoundationFee').value.trim();
+    const others       = document.getElementById('editOthers').value.trim() || '0';
+
+    if (!month || !name || !receiptNo || !foundationFee) {
+      showToast('⚠️ Please fill in all required fields.', 'error'); return;
+    }
+
+    try {
+      const params = new URLSearchParams({ action:'update', rowIndex, month, name, receiptNo, foundationFee, others });
+      const res    = await fetch(SCRIPT_URL + '?' + params.toString());
+      const data   = await res.json();
+      if (data.status === 'success') {
+        showToast('✅ Entry updated!', 'success');
+        closeEdit();
+        loadData();
+      } else {
+        showToast('❌ ' + data.message, 'error');
+      }
+    } catch(err) {
+      showToast('❌ Update failed.', 'error');
+    }
+  }
+
+  // ── Delete ──────────────────────────────────────────────
+  function openDelete(rowIndex) {
+    document.getElementById('deleteRow').value = rowIndex;
+    document.getElementById('deleteOverlay').classList.add('open');
+  }
+  function closeDelete() {
+    document.getElementById('deleteOverlay').classList.remove('open');
+  }
+
+  async function confirmDelete() {
+    const rowIndex = document.getElementById('deleteRow').value;
+    try {
+      const params = new URLSearchParams({ action:'delete', rowIndex });
+      const res    = await fetch(SCRIPT_URL + '?' + params.toString());
+      const data   = await res.json();
+      if (data.status === 'success') {
+        showToast('🗑️ Entry deleted!', 'success');
+        closeDelete();
+        loadData();
+      } else {
+        showToast('❌ ' + data.message, 'error');
+      }
+    } catch(err) {
+      showToast('❌ Delete failed.', 'error');
+    }
+  }
+
+  // Close modals on overlay click
+  document.getElementById('editOverlay').addEventListener('click', function(e){ if(e.target===this) closeEdit(); });
+  document.getElementById('deleteOverlay').addEventListener('click', function(e){ if(e.target===this) closeDelete(); });
+
+  function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'toast ' + type;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Entry Form</title>
+  <link href="https://fonts.googleapis.com/cssyour2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #151820;
+      --border:    #252a36;
+      --accent:    #4f8ef7;
+      --accent2:   #a78bfa;
+      --success:   #34d399;
+      --error:     #f87171;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --label:     #9ca3af;
+      --radius:    14px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before { width:500px;height:500px;background:var(--accent);top:-120px;left:-120px; }
+    body::after  { width:400px;height:400px;background:var(--accent2);bottom:-100px;right:-100px; }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 44px 40px 40px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(32px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .card-header { margin-bottom: 32px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(79,142,247,0.12);
+      border: 1px solid rgba(79,142,247,0.25);
+      color: var(--accent);
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 50px;
+      margin-bottom: 14px;
+    }
+    .badge-dot {
+      width:6px;height:6px;
+      background:var(--accent);
+      border-radius:50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    h1 {
+      font-family: var(--font-head);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .subtitle { font-size:14px; color:var(--muted); font-weight:300; }
+
+    .fields { display:flex; flex-direction:column; gap:16px; }
+    .field  { display:flex; flex-direction:column; gap:7px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+    .section-label {
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      padding: 10px 0 2px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--label);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-family: var(--font-head);
+    }
+    label span { color:var(--error); margin-left:2px; }
+
+    .input-wrap { position:relative; display:flex; align-items:center; }
+    .input-icon {
+      position:absolute; left:14px;
+      color:var(--muted); font-size:15px;
+      pointer-events:none; transition:color 0.2s;
+      z-index: 2;
+    }
+
+    /* Base input & select styles */
+    input, select {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    /* IMPORTANT: options must have explicit bg+color for all browsers */
+    select option {
+      background-color: #1e2230;
+      color: #e8eaf0;
+      font-size: 15px;
+      padding: 8px;
+    }
+    select option:disabled {
+      color: #6b7280;
+    }
+
+    select { cursor:pointer; }
+    input::placeholder { color:var(--muted); }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.05);
+      box-shadow: 0 0 0 4px rgba(79,142,247,0.1);
+    }
+    .input-wrap:focus-within .input-icon { color:var(--accent); }
+    .select-arrow {
+      position:absolute; right:14px;
+      pointer-events:none; color:var(--muted); font-size:13px;
+      z-index: 2;
+    }
+
+    .btn-row { display:flex; gap:12px; margin-top:28px; }
+    .btn {
+      flex:1; padding:14px; border:none;
+      border-radius:var(--radius);
+      font-family:var(--font-head);
+      font-size:14px; font-weight:700; letter-spacing:0.5px;
+      cursor:pointer;
+      transition:transform 0.15s, opacity 0.15s, box-shadow 0.2s;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn:active { transform:scale(0.97); }
+    .btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #7b6ef6);
+      color:#fff;
+      box-shadow: 0 8px 24px rgba(79,142,247,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { box-shadow:0 10px 32px rgba(79,142,247,0.45); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color:var(--muted);
+      border:1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background:rgba(255,255,255,0.1);color:var(--text); }
+
+    .toast {
+      position:fixed; top:24px; left:50%;
+      transform:translateX(-50%) translateY(-80px);
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:50px; padding:12px 22px;
+      font-size:13px; font-weight:500;
+      display:flex; align-items:center; gap:10px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+      transition:transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
+      z-index:999; opacity:0; white-space:nowrap;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+    .toast.success { border-color:rgba(52,211,153,0.35); color:var(--success); }
+    .toast.error   { border-color:rgba(248,113,113,0.35); color:var(--error); }
+
+    .spinner {
+      width:16px;height:16px;
+      border:2px solid rgba(255,255,255,0.3);
+      border-top-color:#fff; border-radius:50%;
+      animation:spin 0.7s linear infinite; display:none;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .footer { text-align:center; margin-top:24px; font-size:12px; color:var(--muted); }
+    .footer a { color:var(--accent); text-decoration:none; }
+
+    #configNotice {
+      background:rgba(248,113,113,0.1);
+      border:1px solid rgba(248,113,113,0.3);
+      border-radius:10px; padding:12px 16px;
+      font-size:13px; color:var(--error);
+      margin-bottom:20px; display:none; line-height:1.5;
+    }
+    @media (max-width:480px) {
+      .card { padding:32px 20px 28px; }
+      h1 { font-size:22px; }
+      .field-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="badge"><span class="badge-dot"></span> Live Entry</div>
+      <h1>Data Entry</h1>
+      <p class="subtitle">Fill in the details below to record an entry into Google Sheets.</p>
+    </div>
+
+    <div id="configNotice">
+      ⚠️ <strong>Setup required:</strong> Replace <code>https://script.google.com/macros/s/AKfycbwbgivOlZqvhxo5JnWR5dOoIyOGM_kCai-psaOQq4e_R4rNAFC-8vAHUXskTXbEbKV6/exec</code> in this file with your deployed Apps Script Web App URL.
+    </div>
+
+    <div class="fields">
+
+      <!-- Month -->
+      <div class="field">
+        <label for="month">Month <span>*</span></label>
+        <div class="input-wrap">
+          <span class="input-icon">📅</span>
+          <select id="month">
+            <option value="" disabled selected>— Select month —</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div class="field">
+        <label for="name">Name <span>*</span></label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <select id="name">
+            <option value="" disabled selected>— Select name —</option>
+            <option value="Mujahid Sarker">Mujahid Sarker</option>
+            <option value="Nahid Hasan Pranto">Nahid Hasan Pranto</option>
+            <option value="Shariful Islam">Shariful Islam</option>
+            <option value="Najmul Gazi">Najmul Gazi</option>
+            <option value="Shafiqul Islam">Shafiqul Islam</option>
+            <option value="Sumon Bappy">Sumon Bappy</option>
+            <option value="Shuhanur Rahman">Shuhanur Rahman</option>
+            <option value="Shohel Rana">Shohel Rana</option>
+            <option value="Tanjim Ahmed Rasel">Tanjim Ahmed Rasel</option>
+            <option value="Masudur Rahman">Masudur Rahman</option>
+            <option value="Imran Rajib">Imran Rajib</option>
+            <option value="Mamun Fakir">Mamun Fakir</option>
+            <option value="Khairul Islam">Khairul Islam</option>
+            <option value="Al Amin Molla">Al Amin Molla</option>
+            <option value="Sadiya Afrin Dhema">Sadiya Afrin Dhema</option>
+            <option value="Mosa Abedin Fahim">Mosa Abedin Fahim</option>
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- Receipt No -->
+      <div class="field">
+        <label for="receiptNo">Receipt No <span>*</span></label>
+        <div class="input-wrap">
+          <span class="input-icon">#</span>
+          <input type="text" id="receiptNo" placeholder="Enter receipt number" autocomplete="off"/>
+        </div>
+      </div>
+
+      <!-- Amount Section -->
+      <div class="section-label">💰 Amount Details</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="foundationFee">Foundation Fee <span>*</span></label>
+          <div class="input-wrap">
+            <span class="input-icon">৳</span>
+            <input type="number" id="foundationFee" placeholder="0.00" step="0.01" min="0"/>
+          </div>
+        </div>
+        <div class="field">
+          <label for="others">Others</label>
+          <div class="input-wrap">
+            <span class="input-icon">৳</span>
+            <input type="number" id="others" placeholder="0.00" step="0.01" min="0"/>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /fields -->
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Save Entry</span>
+      </button>
+      <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+    </div>
+
+    <div class="footer">
+      Entries go directly to Google Sheets &nbsp;·&nbsp; <a href="data.html">📊 View All Entries</a>
+    </div>
+  </div>
+
+  <script>
+    // ══════════════════════════════════════════════════
+    //  ⚙️  CONFIGURATION — paste your Web App URL here
+    // ══════════════════════════════════════════════════
+    const SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+    // ══════════════════════════════════════════════════
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+        document.getElementById('configNotice').style.display = 'block';
+        document.getElementById('submitBtn').disabled = true;
+      }
+    });
+
+    async function submitForm() {
+      const month         = document.getElementById('month').value;
+      const name          = document.getElementById('name').value;
+      const receiptNo     = document.getElementById('receiptNo').value.trim();
+      const foundationFee = document.getElementById('foundationFee').value.trim();
+      const others        = document.getElementById('others').value.trim() || '0';
+
+      if (!month || !name || !receiptNo || !foundationFee) {
+        showToast('⚠️ Please fill in all required fields.', 'error');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const params = new URLSearchParams({ month, name, receiptNo, foundationFee, others });
+        await fetch(SCRIPT_URL + '?' + params.toString(), {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+        showToast('✅ Entry saved to Google Sheets!', 'success');
+        clearForm();
+      } catch (err) {
+        showToast('❌ Failed to save. Check your connection.', 'error');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function clearForm() {
+      document.getElementById('month').selectedIndex = 0;
+      document.getElementById('name').selectedIndex  = 0;
+      document.getElementById('receiptNo').value     = '';
+      document.getElementById('foundationFee').value = '';
+      document.getElementById('others').value        = '';
+    }
+
+    function setLoading(on) {
+      const btn     = document.getElementById('submitBtn');
+      const spinner = document.getElementById('spinner');
+      const text    = document.getElementById('btnText');
+      btn.disabled          = on;
+      spinner.style.display = on ? 'block' : 'none';
+      text.textContent      = on ? 'Saving…' : 'Save Entry';
+    }
+
+    function showToast(msg, type) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className   = 'toast ' + type;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 3500);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitForm();
+    });
+  </script>
+</body>
+</html>
