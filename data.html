@@ -226,6 +226,10 @@
     <input type="hidden" id="editRow"/>
     <div class="fields">
       <div class="field">
+        <label>SL</label>
+        <input type="text" id="editSl" placeholder="Serial number" readonly style="opacity:0.5;cursor:not-allowed;"/>
+      </div>
+      <div class="field">
         <label>Month</label>
         <select id="editMonth">
           <option value="January">January</option><option value="February">February</option>
@@ -340,6 +344,7 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>SL</th>
             <th>Timestamp</th>
             <th>Month</th>
             <th>Name</th>
@@ -350,7 +355,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading data…</div></div></td></tr>
+          <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading data…</div></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -362,7 +367,7 @@
   // ══════════════════════════════════════════════════
   //  ⚙️  CONFIGURATION — same URL as index.html
   // ══════════════════════════════════════════════════
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzynYyFPDwGxmS2KccgqeCYoQh1yYaQGhRvTI4vAF2ySozyLX526CXMXFfK7AFkMmV4/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwejoBqdPq3ccU-baoVXMdrBoevVQVefJenXEgMtJjG1YnvNxHCyvypljdak6ihHf0n/exec";
   // ══════════════════════════════════════════════════
 
   let allRows = [];
@@ -422,7 +427,7 @@
   function renderTable(rows) {
     const tbody = document.getElementById('tableBody');
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
         <div class="empty-icon">📭</div>
         <div class="empty-title">No entries yet</div>
         <div class="empty-sub">Go back to the form and add your first entry.</div>
@@ -433,6 +438,7 @@
     tbody.innerHTML = rows.map((r, i) => `
       <tr id="row-${r.rowIndex}">
         <td class="row-num">${i + 1}</td>
+        <td class="row-num"><strong>${r.sl || '—'}</strong></td>
         <td class="ts-cell">${r.timestamp}</td>
         <td>${r.month}</td>
         <td><strong>${r.name}</strong></td>
@@ -462,6 +468,7 @@
     const r = allRows.find(x => x.rowIndex === rowIndex);
     if (!r) return;
     document.getElementById('editRow').value          = rowIndex;
+    document.getElementById('editSl').value           = r.sl || '';
     document.getElementById('editMonth').value        = r.month;
     document.getElementById('editName').value         = r.name;
     document.getElementById('editReceiptNo').value    = r.receiptNo;
@@ -475,6 +482,7 @@
 
   async function saveEdit() {
     const rowIndex     = document.getElementById('editRow').value;
+    const sl           = document.getElementById('editSl').value;
     const month        = document.getElementById('editMonth').value;
     const name         = document.getElementById('editName').value;
     const receiptNo    = document.getElementById('editReceiptNo').value.trim();
@@ -486,7 +494,7 @@
     }
 
     try {
-      const params = new URLSearchParams({ action:'update', rowIndex, month, name, receiptNo, foundationFee, others });
+      const params = new URLSearchParams({ action:'update', rowIndex, sl, month, name, receiptNo, foundationFee, others });
       const data   = await jsonpFetch(SCRIPT_URL + '?' + params.toString());
       if (data.status === 'success') {
         showToast('✅ Entry updated!', 'success');
