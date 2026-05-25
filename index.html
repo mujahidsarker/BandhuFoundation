@@ -283,22 +283,22 @@
           <span class="input-icon">👤</span>
           <select id="name">
             <option value="" disabled selected>— Select name —</option>
-            <option value="Mujahid Sarker">6 Mujahid Sarker</option>
-            <option value="Nahid Hasan Pranto">8 Nahid Hasan Pranto</option>
-            <option value="Shariful Islam">2 Shariful Islam</option>
-            <option value="Najmul Gazi">7 Najmul Gazi</option>
-            <option value="Shafiqul Islam">11 Shafiqul Islam</option>
-            <option value="Sumon Bappy">3 Sumon Bappy</option>
-            <option value="Shuhanur Rahman">5 Shuhanur Rahman</option>
-            <option value="Shohel Rana">4 Shohel Rana</option>
-            <option value="Tanjim Ahmed Rasel">1 Tanjim Ahmed Rasel</option>
-            <option value="Masudur Rahman">10 Masudur Rahman</option>
-            <option value="Imran Rajib">12 Imran Rajib</option>
-            <option value="Mamun Fakir">13 Mamun Fakir</option>
-            <option value="Khairul Islam">14 Khairul Islam</option>
-            <option value="Al Amin Molla">15 Al Amin Molla</option>
-            <option value="Sadiya Afrin Dhema">16 Sadiya Afrin Dhema</option>
-            <option value="Mosa Abedin Fahim">9 Mosa Abedin Fahim</option>
+            <option value="1|Tanjim Ahmed Rasel">1 Tanjim Ahmed Rasel</option>
+            <option value="2|Shariful Islam">2 Shariful Islam</option>
+            <option value="3|Sumon Bappy">3 Sumon Bappy</option>
+            <option value="4|Shohel Rana">4 Shohel Rana</option>
+            <option value="5|Shuhanur Rahman">5 Shuhanur Rahman</option>
+            <option value="6|Mujahid Sarker">6 Mujahid Sarker</option>
+            <option value="7|Najmul Gazi">7 Najmul Gazi</option>
+            <option value="8|Nahid Hasan Pranto">8 Nahid Hasan Pranto</option>
+            <option value="9|Mosa Abedin Fahim">9 Mosa Abedin Fahim</option>
+            <option value="10|Masudur Rahman">10 Masudur Rahman</option>
+            <option value="11|Shafiqul Islam">11 Shafiqul Islam</option>
+            <option value="12|Imran Rajib">12 Imran Rajib</option>
+            <option value="13|Mamun Fakir">13 Mamun Fakir</option>
+            <option value="14|Khairul Islam">14 Khairul Islam</option>
+            <option value="15|Al Amin Molla">15 Al Amin Molla</option>
+            <option value="16|Sadiya Afrin Dhema">16 Sadiya Afrin Dhema</option>
           </select>
           <span class="select-arrow">▾</span>
         </div>
@@ -352,7 +352,7 @@
     // ══════════════════════════════════════════════════
     //  ⚙️  CONFIGURATION — paste your Web App URL here
     // ══════════════════════════════════════════════════
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzynYyFPDwGxmS2KccgqeCYoQh1yYaQGhRvTI4vAF2ySozyLX526CXMXFfK7AFkMmV4/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwejoBqdPq3ccU-baoVXMdrBoevVQVefJenXEgMtJjG1YnvNxHCyvypljdak6ihHf0n/exec";
     // ══════════════════════════════════════════════════
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -364,20 +364,24 @@
 
     async function submitForm() {
       const month         = document.getElementById('month').value;
-      const name          = document.getElementById('name').value;
+      const nameValue     = document.getElementById('name').value; // format: "SL|Name"
       const receiptNo     = document.getElementById('receiptNo').value.trim();
       const foundationFee = document.getElementById('foundationFee').value.trim();
       const others        = document.getElementById('others').value.trim() || '0';
 
-      if (!month || !name || !receiptNo || !foundationFee) {
+      if (!month || !nameValue || !receiptNo || !foundationFee) {
         showToast('\u26a0\ufe0f Please fill in all required fields.', 'error');
         return;
       }
 
+      // Split "SL|Name" into separate fields
+      const [sl, ...nameParts] = nameValue.split('|');
+      const name = nameParts.join('|');
+
       setLoading(true);
 
       try {
-        const params = new URLSearchParams({ month, name, receiptNo, foundationFee, others });
+        const params = new URLSearchParams({ month, sl, name, receiptNo, foundationFee, others });
         await sendViaIframe(SCRIPT_URL + '?' + params.toString());
         showToast('\u2705 Entry saved to Google Sheets!', 'success');
         clearForm();
